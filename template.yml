@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  mongoDBURI:
+    Type: String
+  databaseName:
+    Type: String
+  gmailUsername:
+    Type: String
+  gmailPassword:
+    Type: String
+  mailSender:
+    Type: String
+
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Timeout: 6
+    Environment:
+      Variables:
+        MONGODB_URI: !Ref mongoDBURI
+        DATABASE_NAME: !Ref databaseName
+        GMAIL_USERNAME: !Ref gmailUsername
+        GMAIL_PASSWORD: !Ref gmailPassword
+        MAIL_SENDER: !Ref mailSender
+        QUEUE_URL: !GetAtt OrderTaskQueue.QueueUrl
+
+Resources:
+  CheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/checkout.handler
+      Events:
+        Checkout:
+          Type: Api
+          Properties:
+            Path: /checkout
+            Method: post
+  GetProductCatalogFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/catalog.handler
+      Events:
+        GetProductCatalog:
+          Type: Api
+          Properties:
+            Path: /products
+            Method: get
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt OrderTaskQueue.QueueName
+  EmailOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/email.handler
+      Events:
+        OrderPlaced:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OrderTaskQueue.Arn
+        EmailOrder:
+          Type: Api
+          Properties:
+            Path: /email
+            Method: post
+
+  OrderTaskQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: OrderTaskQueue
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt OrderTaskQueueDLQ.Arn
+        maxReceiveCount: 3
+  OrderTaskQueueDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: OrderTaskQueueDLQ

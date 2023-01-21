@@ -10,6 +10,4 @@ async function sendSQSMessage(queueUrl, message) {
   return sqs.sendMessage(payload).promise();
 }
 
-module.exports = {
-  sendSQSMessage,
-};
+exports.sendSQSMessage = sendSQSMessage;

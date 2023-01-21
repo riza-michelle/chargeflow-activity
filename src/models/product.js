@@ -10,6 +10,13 @@ class Product {
     this.name = obj.name;
   }
 
+  static async create(params) {
+    const collection = await getCollection(this.modelName);
+    const transaction = await collection.insertOne(params);
+    const item = await collection.findOne({ _id: transaction.insertedId });
+    return new Product(item);
+  }
+
   static async getAll() {
     const collection = await getCollection(this.modelName);
     const items = await collection.find({}).toArray();
