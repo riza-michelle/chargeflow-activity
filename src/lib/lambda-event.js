@@ -52,7 +52,7 @@ async function handleEvent(event, handler) {
     message = ex.message;
     statusCode = ex.statusCode || 500;
   }
-  return { statusCode, body, message };
+  return { statusCode, body: JSON.stringify(body) };
 }
 
 module.exports = {

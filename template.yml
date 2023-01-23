@@ -36,6 +36,9 @@ Resources:
           Properties:
             Path: /checkout
             Method: post
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt OrderTaskQueue.QueueName
   GetProductCatalogFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -46,9 +49,6 @@ Resources:
           Properties:
             Path: /products
             Method: get
-      Policies:
-        - SQSSendMessagePolicy:
-            QueueName: !GetAtt OrderTaskQueue.QueueName
   EmailOrderFunction:
     Type: AWS::Serverless::Function
     Properties:
